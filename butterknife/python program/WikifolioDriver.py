@@ -5,24 +5,35 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.alert import Alert
 
+from seleniim.common.exceptions import NoSuchElementException
+from configparser import ConfigParser
 
-class WikifolioDriver:
+class Driver:
 
-    def __init__(self):
-        self.driver = webdriver.PhantomJS(executable_path = "C:\\Users\\Adrian\\Documents\\Python\\phantomjs-2.1.1-windows\\bin\\phantomjs")
-        self.chainz = ActionChains(self.driver)
-        self.alarm = Alert(self.driver)
-        self.wait = WebDriverWait(self.driver, 10)
+    def __init__(self, config):
+        self._driver = webdriver.PhantomJS(executable_path = "C:\\Users\\Adrian\\Documents\\Python\\phantomjs-2.1.1-windows\\bin\\phantomjs")
+        self._current_website
+        config = ConfigParser()
+        config.read(config)
+        self._dict = config._sections['butterknife']
 
-    def get_by_class(class_args):
-        raw_value = self.driver.find_element(By.CLASS_NAME, class_args)
-        
+    @property    
+    def current_website(self):
+        return self._current_website
+
+    @current_website.setter    
+    def current_website(self, value):
+        self._current_website = value
+        self._driver.get(value)
     
-    def scrape_isin(self, soup):
-        isin = soup.find('span', class_='js-copy-isin')
-        return isin.get_text()
-
-
+    def get_text_by_class(class_args):
+        """Returns the inner text of a class element."""
+        try:
+            raw_value = self.driver.find_element_by_class_name(class_args)
+            return raw_value.text
+        except NoSuchElementException as e:
+            print(e)
+    
     '@return [equities, cash, etf, structured]'
     def scrape_weighting(self, soup):
         try:
@@ -40,7 +51,7 @@ class WikifolioDriver:
         else:
             return weighting
 
-    def login(self, username, pwd):
+    def login(self):
         self.driver.get('https://www.wikifolio.com/de/de/home')
         self.driver.maximize_window()
         # accept select-country-query
