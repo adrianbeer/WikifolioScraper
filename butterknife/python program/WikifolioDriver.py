@@ -71,11 +71,15 @@ class Driver:
         except: 
             return False
             
-    def scrape_links(self, amount, search_options):
-        self.driver.get(search_options)
+    def scrape_links(self, value):
+        links = []
+        elements = self._driver.find_elements_by_class(value)
+        for element in elements:
+            try:
+                links.append(element.get_attribute('href'))
+            except AttributeError as e:
+                print(e)
         self.scroll_down(amount)
-        soup = BeautifulSoup(self.driver.page_source, 'lxml')
-        raw_links = soup.find_all('a', {'class':'wikifolio-preview-title-link'})
         links = []
         for link in raw_links:
             links.append(link['href'])
