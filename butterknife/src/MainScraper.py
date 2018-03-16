@@ -1,29 +1,42 @@
-from WikifolioDriver import WikifolioDriver
-from ExtendedPanda import ExtendedPanda
-from datetime import datetime
-import pandas as pd
-import pickle
-import json
-import csv
+from collections import namedtuple
 
+from . import WikifolioDriver
+
+
+Quarry = namedtuple('Quarry', ['title', 'amount', 'class_name', 'link'])
+
+"""
+Variable description:
+
+:var quarries: list of 4-tuples (title, amount, class_name, link) to provide who, 
+                    where and what information (RECONNAISSANCE).
+:var blocks: dict with `titles` as keys and a list of links, which were gained 
+            from the quarries.
+"""
+quarries = []
+blocks = dict()
+
+
+
+#Initialize and parse quarries
+config = ConfigParser()
+config.read('quarries.ini')
+for key in config['Quarries']:
+    quarries.append(Quarry(key, *(parser['Quarries'][key].split(' '))))
+
+
+driver = WikifolioDriver(config.ini, 20)
+#2 options: login or set cookies
+# v/
+
+#Scraping links: currently only available by class (html element)!
+print('--- start scraping links ---')
+for quarry in quarries:
+    blocks[quarry.title] = driver.scrape_links(quarry.class_name, quarry.amount)
+
+
+#-------------- old code -----------------------------------------
 def scrape_cec(filename, amount, url):
-"""
-:param filename: the name of the file which is going to be created
-:param amount: number of folios to be scraped times 12
-:param search_options: the link to scrape the links from
-"""
-   print('START LOGIN')
-   with WikifolioDriver() as tire:
-      for x in range(4):
-         login = tire.login('***REMOVED***', '***REMOVED***')
-         if login:      
-          break
-      if login:
-         print("SUCCESSFUL LOGIN")
-      else:
-         raise Exception("FAILED LOGIN")
-      print('START COLLECTING LINKS')
-      links = tire.scrape_links(amount, url)
       links = links[0:101]
       print('FINISHED COLLECTING LINKS\nSTART SCRAPING WIKIFOLIOS')
 ##      INDICATOR INITIALIZATION

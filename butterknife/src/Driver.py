@@ -11,21 +11,22 @@ from configparser import ConfigParser
 
 class Driver:
 
-    def __init__(self, config):
+    def __init__(self, config, implicit_wait=0):
         config = ConfigParser()
         config.read(config)
         self._dict = config._sections['butterknife']
-        self._driver = webdriver.PhantomJS(executable_path = self._dict['phantomjs'])
-        self._current_website = None
+        self.driver = webdriver.PhantomJS(executable_path = self._dict['phantomjs'])
+        self.driver.implicit_wait(implicit_wait)
+        self.current_website = None
 
     @property    
     def current_website(self):
-        return self._current_website
+        return self.current_website
 
     @current_website.setter    
     def current_website(self, value):
-        self._current_website = value
-        self._driver.get(value)
+        self.current_website = value
+        self.driver.get(value)
     
     def get_text_by_class(class_args):
         """Returns the inner text of a class element."""
@@ -35,7 +36,7 @@ class Driver:
         except NoSuchElementException as e:
             print(e)
     
-    def scrape_links(self, value, amount, cap=50):
+    def scrape_links(self, name, amount, cap=50):
         links = []
         _cap = cap #max. number of scroll downs
         counter = 1
@@ -43,7 +44,7 @@ class Driver:
             #scrolls down until `amount` of links have been obtained
             counter++
             scroll_down()
-            elements = self._driver.find_elements_by_class(value)
+            elements = self.driver.find_elements_by_class_name(name)
             for element in elements:
                 try:
                     links.append(element.get_attribute('href'))

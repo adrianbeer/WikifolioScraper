@@ -57,11 +57,9 @@ class WikifolioDriver(Driver):
 
         element = self.driver.find_element_by_name(f_username_name)
         click(element)
-        element.send_keys(self.username)
 
         element = self.driver.find_element_by_name(f_password_name)
         click(element)
-        element.send_keys(self.password)
 
         element = self.driver.find_element_by_class_name(b_login2_class)
         click(element)
