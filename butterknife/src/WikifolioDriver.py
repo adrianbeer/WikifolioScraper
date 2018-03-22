@@ -1,18 +1,48 @@
 from random import uniform
 from time import sleep
+from collections import namedtuple
+from configparser import ConfigParser
 
-from . import Driver
+from .Driver import Driver
+
+
+Quarry = namedtuple('Quarry', ['title', 'amount', 'class_name', 'link'])
 
 
 class WikifolioDriver(Driver):
 
-     def __init__(self, config, implicit_wait):
+    def __init__(self, config, implicit_wait):
         super().__init__(config, implicit_wait)
         self.username = self._dict['username']
         self.password = self._dict['password']
+        self.quarries = []
+        self.blocks = dict()
+
+    def configure(self, filename):
+        """
+        Variable description:
+
+        :var quarries: list of 4-tuples (title, amount, class_name, link) to provide who, 
+                            where and what information (RECONNAISSANCE).
+        :var blocks: dict with `titles` as keys and a list of links, which were gained 
+                    from the quarries.
+        """
+        parser = ConfigParser()
+        parser.read(filename)
+        for key in parser['Quarries']:
+            args = parser['Quarries'][key].split(' ')
+            #Casting is needed, otherwise `amount` will be a string
+            args[1] = int(args[0])
+            quarry = Quarry(key, *args)
+            self.quarries.append(quarry)
+
+    def scrape_links(self):
+        #Scraping links: currently only available by class (html element)!
+        for quarry in quarries:
+            blocks[quarry.title] = driver.scrape_links(quarry.link, quarry.class_name, quarry.amount) 
 
     @staticmethod
-    def click(element):
+    def click(self, element):
         element.click()
         sleep(uniform(1, 2))
 
