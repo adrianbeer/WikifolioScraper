@@ -3,6 +3,11 @@ from time import sleep
 from collections import namedtuple
 from configparser import ConfigParser
 
+from selenium.webdriver import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.webdriver.common.by import By
+
 from .Driver import Driver
 
 
@@ -18,7 +23,7 @@ class WikifolioDriver(Driver):
         self.quarries = []
         self.blocks = dict()
 
-    def configure(self, filename):
+    def read_quarries(self, config):
         """
         Variable description:
 
@@ -28,77 +33,96 @@ class WikifolioDriver(Driver):
                     from the quarries.
         """
         parser = ConfigParser()
-        parser.read(filename)
+        parser.read(config)
         for key in parser['Quarries']:
-            args = parser['Quarries'][key].split(' ')
-            #Casting is needed, otherwise `amount` will be a string
-            args[1] = int(args[0])
-            quarry = Quarry(key, *args)
+            args = [key]
+            args.extend(parser['Quarries'][key].split(' '))
+            quarry = Quarry(
+                    title=args[0], 
+                    amount=int(args[1]), 
+                    class_name=args[2],
+                    link = args[3],
+                    )
             self.quarries.append(quarry)
 
     def scrape_links(self):
         #Scraping links: currently only available by class (html element)!
-        for quarry in quarries:
-            blocks[quarry.title] = driver.scrape_links(quarry.link, quarry.class_name, quarry.amount) 
+        for quarry in self.quarries:
+            self.blocks[quarry.title] = super().scrape_links(
+                    link=quarry.link,
+                    name=quarry.class_name,
+                    amount=quarry.amount
+                    ) 
 
-    @staticmethod
+    def scrape_content(self, link):
+        """---------------------"""
+        """Initialize variables """
+        """---------------------"""
+        c_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[1]"
+        get_stocks = driver.get_text_by_class(c-portfolio__head-label)
+        
     def click(self, element):
+        try:
+            ActionChains(self.driver).move_to_element(element).perform()
+        except Exception as e:
+            print(e)
         element.click()
         sleep(uniform(1, 2))
 
-    def set_cookie(self, cookie):
-        self.driver.add_cookie(cookie)
-
     def login(self):
         """
+        :returns: Cookies obtained by the login
+
         Initialize variables used for locating elements throughout the login
         routine.
         Legend:
           q -> query/question
           s -> selector; answers `q`
-          b -> plain_button
+          b -> button
           f -> field of a form
+          t -> trigger
         """
-        b_random_class = 'c-ao-wikis__title'
-        q_country_class = "btn dropdown-toggle js-disclaimer__min-height-32"
-        q_country_title = 'Land wechseln'
-        s_country_xpath = "//ul[@class='dropdown-menu inner']/li[4]"
-        b_login1_class = 'c-button c-button--ghost-grey o-header-pre__buttons--equalwidth o-header-pre__login-button js-login-button'
+        t_trigger = "//h1[@class='c-ao-wikis__title']"
+        b_accept_law = "//div[@class='c-button c-button--bold c-button--cursor-pointer js-disclaimer__change ']"
+        b_anmelden = "//a[@class='c-button c-button--ghost-grey o-header-pre__buttons--equalwidth o-header-pre__login-button js-login-button']"
         f_username_name = 'Username'
         f_password_name = 'Password'
-        b_login2_class = 'c-button c-button--large c-button--block c-button--uppercase c-button--bold'
+        b_login = "//button[@type='submit']"
         
-        #start logging in
-        self.current_website = 'https://www.wikifolio.com/'
+        #GOTO Website
+        self.current_website = 'https://www.wikifolio.com/de/de/home'
         self.driver.maximize_window()
 
-        #Needed to trigger country selection
-        element = self.driver.find_element_by_class_name(b_random_class)
-        click(element)
+        #Activate Eventviewer to trigger law query
+        element = self.driver.find_element_by_xpath(t_trigger)
+        try:
+            self.click(element)
+        except ElementClickInterceptedException:
+            pass
 
-        element = self.driver.find_element_by_class_name(q_country_class)
-        click(element)
+        #Accept law query
+        self.driver.switch_to.active_element
+        element = self.wait.until(EC.element_to_be_clickable((By.XPATH, b_accept_law)))
+        self.click(element)
 
-        element = self.driver.find_element_by_xpath(s_country_xpath)
-        click(element)
-
-        element = self.driver.find_element_by_class_name(b_login1_class)
-        click(element)
+        #Click "Anmelden"
+        element = self.driver.find_element_by_xpath(b_anmelden)
+        self.click(element)
 
         element = self.driver.find_element_by_name(f_username_name)
-        click(element)
+        self.click(element)
         element.send_keys(self.username)
 
         element = self.driver.find_element_by_name(f_password_name)
-        click(element)
+        self.click(element)
         element.send_keys(self.password)
 
-        element = self.driver.find_element_by_class_name(b_login2_class)
-        click(element)
+        self.driver.switch_to.active_element
+        element = self.driver.find_element_by_xpath(b_login)
+        self.click(element)
 
         cookies = self.driver.get_cookies()
         return cookies
-
 
 
 #    '@return [equities, cash, etf, structured]'
@@ -118,3 +142,10 @@ class WikifolioDriver(Driver):
 #        else:
 #            return weighting
 
+#    def add_cookie_from_config(self, config):
+#        parser = ConfigParser()
+#        parser.read(config)
+#        cookie = dict()
+#        for key in parser['cookies']:
+#            cookie[key] = parser['cookies'][key]
+#        self.driver.add_cookie(cookie)

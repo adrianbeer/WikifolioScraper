@@ -2,15 +2,29 @@ from collections import namedtuple
 
 from . import WikifolioDriver
 
+"""---------------------"""
+"""Initialize variables """
+"""---------------------"""
+
+f_sysconfig = r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\config.ini'
+f_quarries = r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\quarries.ini'
+
+
+"""---------------------"""
+"""    Start Running    """
+"""---------------------"""
+
+driver = WikifolioDriver(f_sysconfig, 20)
+driver.read_quarries(f_quarries)
+driver.scrape_links()
 
 
 
-driver = WikifolioDriver(config.ini, 20)
-#2 options: login or set cookies
-# v/
 
-c_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[1]"
-get_stocks = driver.get_text_by_class(c-portfolio__head-label)
+
+
+
+
 
 #-------------- old code -----------------------------------------
 

@@ -5,6 +5,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.alert import Alert
+from selenium.webdriver.support.ui import WebDriverWait
+
+import time
 
 from selenium.common.exceptions import NoSuchElementException
 from configparser import ConfigParser
@@ -19,6 +22,7 @@ class Driver:
         binary = FirefoxBinary(self._dict['foxbin'])
         gecko = self._dict['gecko']
         self.driver = webdriver.Firefox(executable_path=gecko, firefox_binary=binary)
+        self.wait = WebDriverWait(self.driver, implicit_wait)
         self.driver.implicitly_wait(implicit_wait)
         self._current_website = None
 
@@ -44,19 +48,19 @@ class Driver:
         links = []
         _cap = cap #max. number of scroll downs
         counter = 1
-        while (links < amount) and (counter < _cap):
+        while (len(links) < amount) and (counter < _cap):
             #scrolls down until `amount` of links have been obtained
             counter += 1
-            scroll_down()
+            self.scroll_down()
             elements = self.driver.find_elements_by_class_name(name)
             for element in elements:
                 try:
                     links.append(element.get_attribute('href'))
                 except AttributeError as e:
                     print(e)
-        return links
+        return links[0:amount]
     
-    def _scroll_down(self):
+    def scroll_down(self):
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(0.5)
 
