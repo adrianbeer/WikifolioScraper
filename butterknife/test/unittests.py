@@ -7,28 +7,30 @@ class TestInitialization(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.driver = WikifolioDriver(r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\config.ini', 20)
+        cls.driver.login()
 
-    def test_login(self):
-        self.driver.login()
-
-    @unittest.skip("testing skipping")
-    def test_config_parser(self):
+    def test_sysconfig_parser(self):
         self.assertEqual(self.driver.username, r'***REMOVED***')
         self.assertEqual(self.driver.password, r'***REMOVED***')
 
-    @unittest.skip("testing skipping")
     def test_read_quarries(self):
         self.driver.read_quarries(r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\quarries.ini')
-        self.assertEqual(self.driver.quarries[0], Quarry(*('test2', 2, 'wikifolio-preview-title-link', 'https://www.wikifolio.com/en/int/all-wikifolios/search#/?tags=aktde,akteur,aktusa,akthot,aktint,etf,fonds,anlagezert,hebel&media=true&private=true&assetmanager=true&theme=true&super=true&WithoutLeverageProductsOnly=true&sortOrder=asc&sortBy=aum')))
+        self.assertEqual(self.driver.quarries[0], Quarry(*('test2', 2, 'wikifolio-preview-title-link', 'https://www.wikifolio.com/de/de/alle-wikifolios/suche#/?tags=aktde,akteur,aktusa,akthot,aktint,etf,fonds,anlagezert,hebel&media=true&private=true&assetmanager=true&theme=true&super=true&WithoutLeverageProductsOnly=true&sortOrder=asc&sortBy=aum&investable=true&realMoney=true')))
         
-    @unittest.skip("testing skipping")
-    def test_scrape_link(self):
-        self.driver.scrape_links()
+    def test_get_links(self):
+        self.driver.get_links()
         self.assertEqual(len(self.driver.blocks['test2']), 2)
 
-#    @classmethod
-#    def tearDownClass(cls):
-#        cls.driver.quit()
+    def test_scrape_content(self):
+        # Levermann depot
+        link = r'https://www.wikifolio.com/de/de/w/wf00quinte'
+        row = self.driver.scrape_content(link)
+        # Check ISIN
+        self.assertEqual(row[0], 'DE000LS9AJF5')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.driver.quit()
 
 
 if __name__ == '__main__':

@@ -45,22 +45,51 @@ class WikifolioDriver(Driver):
                     )
             self.quarries.append(quarry)
 
-    def scrape_links(self):
+    def get_links(self):
         #Scraping links: currently only available by class (html element)!
         for quarry in self.quarries:
-            self.blocks[quarry.title] = super().scrape_links(
-                    link=quarry.link,
-                    name=quarry.class_name,
+            self.blocks[quarry.title] = super().get_links(
+                    source=quarry.link,
+                    class_name=quarry.class_name,
                     amount=quarry.amount
                     ) 
 
     def scrape_content(self, link):
         """---------------------"""
-        """Initialize variables """
-        """---------------------"""
-        c_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[1]"
-        get_stocks = driver.get_text_by_class(c-portfolio__head-label)
+        """Initialize variables
+
+        :returns: List of values
+
+        .. warning:: 
+
+        Order of returned values must be harmonized w/ the `.csv` files.
         
+
+        Legende:
+        e -> element
+        ------------------------"""
+        self.current_website = link
+       
+        # Get invested-to-cash ratio
+        e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[1]"
+        element = self.driver.find_element_by_xpath(e_portfolio)
+        self.click(element)
+        e_stock = "//span[@class='c-portfolio__head-label']"
+        shares = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
+        assert len(shares) == 2
+        invested, cash = [round(x.strip([' ', '%']).replace(',','.')/100, 2) for x in shares]
+
+        # Get ISIN
+        e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
+        isin = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
+        
+        # Get capital
+        e_capital = "//dic[@class='c-certificate__item-value']"
+        capital = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
+        # u20AC is the euro sign
+        capital = capital.replace('.','').strip(' ', u"\u20AC")
+        return [isin, capital, invested, cash]
+
     def click(self, element):
         try:
             ActionChains(self.driver).move_to_element(element).perform()
