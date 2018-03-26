@@ -25,16 +25,6 @@ class Driver:
         self.wait = WebDriverWait(self.driver, implicit_wait)
         self.driver.implicitly_wait(implicit_wait)
         self._current_website = None
-        self._locating_elements = dict(
-                By.CLASS_NAME = self.driver.find_elements_by_class_name,
-                By.CSS_SELECTOR = self.driver.find_elements_by_css_selector,
-                By.ID = self.driver.find_elements_by_id,
-                By.LINK_TEXT = self.driver.find_elements_by_link_text,
-                By.NAME = self.driver.find_elements_by_name,
-                By.PARTIAL_LINK_TEXT = self.driver.find_elements_by_partial_link_text,
-                By.TAG_NAME = self.driver.find_elements_by_tag_name,
-                By.XPATH = self.driver.find_elements_by_xpath,
-            )
 
     @property    
     def current_website(self):
@@ -45,32 +35,48 @@ class Driver:
         self._current_website = value
         self.driver.get(value)
     
-    def get_website_elements(by, identifier, attribute=None):
-        elements = self._locating_elements.[by](identifier)
-        if attribute is None:
+    def get_website_elements(self, by, identifier, desired_attribute=None):
+        elements = self._find_elements(by, identifier)
+        if desired_attribute is None:
             return elements
-        elif attribute == 'text':
+        if desired_attribute == 'text':
             return [e.text for e in elements]
         else:
-            raise KeyError("Requested attribute doesn't exist")
-
+            return [e.get_attribute(desired_attribute) for e in elements]
     
     def get_links(self, source, class_name, amount):
         self.current_website = source
         links = []
         while (len(links) < amount):
             self.scroll_down() #Scroll down to get access to more links
-            elements = self.driver.find_elements_by_class_name(class_name)
-            for element in elements:
-                try:
-                    links.append(element.get_attribute('href'))
-                except AttributeError as e:
-                    print(e)
+            links.extend(self.get_website_elements(By.CLASS_NAME, class_name, 'href'))
         return links[0:amount]
     
     def scroll_down(self):
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(uniform(1,2))
+        sleep(uniform(1,2))
+
+    def _find_elements(self, by, identifier):
+        elements = None
+        if by == By.CLASS_NAME:
+            elements = self.driver.find_elements_by_class_name(identifier)
+        elif by == By.XPATH: 
+           elements = self.driver.find_elements_by_xpath(identifier)
+        elif by == By.NAME:
+           elements = self.driver.find_elements_by_name(identifier)
+        elif by == By.CSS_SELECTOR:
+            elements = self.driver.find_elements_by_css_selector(identifier)
+        elif by == By.ID:
+           elements = self.driver.find_elements_by_id(identifier)
+        elif by == By.LINK_TEXT:
+           elements = self.driver.find_elements_by_link_text(identifier)
+        elif by == By.PARTIAL_LINK_TEXT:
+           elements = self.driver.find_elements_by_partial_link_text(identifier)
+        elif by == By.TAG_NAME:
+           elements = self.driver.find_elements_by_tag_name(identifier)
+        else:
+            pass
+        return elements
 
     def __enter__(self):
         return self

@@ -1,7 +1,7 @@
-from random import uniform
-from time import sleep
 from collections import namedtuple
 from configparser import ConfigParser
+from random import uniform
+from time import sleep
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
@@ -23,7 +23,7 @@ class WikifolioDriver(Driver):
         self.quarries = []
         self.blocks = dict()
 
-    def read_quarries(self, config):
+    def parse_quarries(self, config):
         """
         Variable description:
 
@@ -45,71 +45,30 @@ class WikifolioDriver(Driver):
                     )
             self.quarries.append(quarry)
 
-    def get_links(self):
+    def make_blocks_from_quarries(self):
         #Scraping links: currently only available by class (html element)!
         for quarry in self.quarries:
             self.blocks[quarry.title] = super().get_links(
                     source=quarry.link,
                     class_name=quarry.class_name,
                     amount=quarry.amount
-                    ) 
+                ) 
 
     def scrape_content(self, link):
-        """---------------------"""
-        """Initialize variables
-
+        """---------------------
         :returns: List of values
 
-        .. warning:: 
-
-        Order of returned values must be harmonized w/ the `.csv` files.
-        
-
-        Legende:
-        e -> element
+        .. warning:: Order of returned values to be harmonized w/ `.csv` files. 
         ------------------------"""
         self.current_website = link
-       
-        # Get invested-to-cash ratio
-        e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[1]"
-        element = self.driver.find_element_by_xpath(e_portfolio)
-        self.click(element)
-        e_stock = "//span[@class='c-portfolio__head-label']"
-        shares = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
-        assert len(shares) == 2
-        invested, cash = [round(x.strip([' ', '%']).replace(',','.')/100, 2) for x in shares]
-
-        # Get ISIN
-        e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
-        isin = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
-        
-        # Get capital
-        e_capital = "//dic[@class='c-certificate__item-value']"
-        capital = self.driver.get_website_elements(By.XPATH, e_stock, 'text')
-        # u20AC is the euro sign
-        capital = capital.replace('.','').strip(' ', u"\u20AC")
+        invested, cash = self._get_commitment_ratio()
+        isin = self._get_isin()
+        capital = self._get_capital
         return [isin, capital, invested, cash]
-
-    def click(self, element):
-        try:
-            ActionChains(self.driver).move_to_element(element).perform()
-        except Exception as e:
-            print(e)
-        element.click()
-        sleep(uniform(1, 2))
 
     def login(self):
         """
         :returns: Cookies obtained by the login
-
-        Initialize variables used for locating elements throughout the login
-        routine.
-        Legend:
-          q -> query/question
-          s -> selector; answers `q`
-          b -> button
-          f -> field of a form
-          t -> trigger
         """
         t_trigger = "//h1[@class='c-ao-wikis__title']"
         b_accept_law = "//div[@class='c-button c-button--bold c-button--cursor-pointer js-disclaimer__change ']"
@@ -123,36 +82,64 @@ class WikifolioDriver(Driver):
         self.driver.maximize_window()
 
         #Activate Eventviewer to trigger law query
-        element = self.driver.find_element_by_xpath(t_trigger)
         try:
-            self.click(element)
+            self.find_and_click(By.XPATH, t_trigger)
         except ElementClickInterceptedException:
             pass
 
         #Accept law query
         self.driver.switch_to.active_element
-        element = self.wait.until(EC.element_to_be_clickable((By.XPATH, b_accept_law)))
-        self.click(element)
+        element = self.find_and_click(By.XPATH, b_accept_law)
 
-        #Click "Anmelden"
-        element = self.driver.find_element_by_xpath(b_anmelden)
-        self.click(element)
+        self.find_and_click(By.XPATH, b_anmelden)
 
-        element = self.driver.find_element_by_name(f_username_name)
-        self.click(element)
+        element = self.find_and_click(By.NAME, f_username_name)
         element.send_keys(self.username)
 
-        element = self.driver.find_element_by_name(f_password_name)
-        self.click(element)
+        element = self.find_and_click(By.NAME, f_password_name)
         element.send_keys(self.password)
 
         self.driver.switch_to.active_element
-        element = self.driver.find_element_by_xpath(b_login)
-        self.click(element)
+        self.find_and_click(By.XPATH, b_login)
 
         cookies = self.driver.get_cookies()
         return cookies
 
+    def find_and_click(self, by, identifier):
+        element = self.wait.until(EC.element_to_be_clickable((by, identifier)))
+        self._click(element)
+        return element
+
+    def _click(self, element):
+        # Tries to perform a more realistic click, than standard implementation
+        try:
+            ActionChains(self.driver).move_to_element(element).perform()
+        except Exception as e:
+            print(e)
+        element.click()
+        sleep(uniform(1, 2))
+
+    def _get_commitment_ratio(self):
+        # Get invested-to-cash ratio
+        # Note: Xpath lists start at 1.
+        e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[2]"
+        self.find_and_click(By.XPATH, e_portfolio)
+        e_stock = "//span[@class='c-portfolio__head-label']"
+        shares = super().get_website_elements(By.XPATH, e_stock, 'text')
+        assert len(shares) == 2
+        return [round(float(x.strip(' %').replace(',','.'))/100, 2) for x in shares]
+
+    def _get_isin(self):
+        # Get ISIN
+        e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
+        return super().get_website_elements(By.XPATH, e_stock, 'text')
+        
+    def _get_capital(self):
+        # Get capital
+        e_capital = "//dic[@class='c-certificate__item-value']"
+        capital = super().get_website_elements(By.XPATH, e_stock, 'text')
+        # u20AC is the euro sign
+        return capital.replace('.','').strip(' ', u"\u20AC")
 
 #    '@return [equities, cash, etf, structured]'
 #    def scrape_weighting(self, soup):

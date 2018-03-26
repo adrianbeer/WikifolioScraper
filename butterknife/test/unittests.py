@@ -13,12 +13,10 @@ class TestInitialization(unittest.TestCase):
         self.assertEqual(self.driver.username, r'***REMOVED***')
         self.assertEqual(self.driver.password, r'***REMOVED***')
 
-    def test_read_quarries(self):
-        self.driver.read_quarries(r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\quarries.ini')
+    def test_block_generation(self):
+        self.driver.parse_quarries(r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\quarries.ini')
         self.assertEqual(self.driver.quarries[0], Quarry(*('test2', 2, 'wikifolio-preview-title-link', 'https://www.wikifolio.com/de/de/alle-wikifolios/suche#/?tags=aktde,akteur,aktusa,akthot,aktint,etf,fonds,anlagezert,hebel&media=true&private=true&assetmanager=true&theme=true&super=true&WithoutLeverageProductsOnly=true&sortOrder=asc&sortBy=aum&investable=true&realMoney=true')))
-        
-    def test_get_links(self):
-        self.driver.get_links()
+        self.driver.make_blocks_from_quarries()
         self.assertEqual(len(self.driver.blocks['test2']), 2)
 
     def test_scrape_content(self):
