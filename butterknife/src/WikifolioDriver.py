@@ -141,27 +141,3 @@ class WikifolioDriver(Driver):
         # u20AC is the euro sign
         return capital.replace('.','').strip(' ', u"\u20AC")
 
-#    '@return [equities, cash, etf, structured]'
-#    def scrape_weighting(self, soup):
-#        try:
-#            equities = soup.find('td', attrs={'data-title':'Aktien'}).text
-#            cash = soup.find('tr', class_="underlyingGroupHeader table-group-row cash")
-#            cash = cash.find('td', class_='numeric').text
-#            etf = soup.find('td', attrs={'data-title':'ETFs'}).text
-#            structured = soup.find('td', attrs={'data-title':'Strukturierte Produkte'}).text
-#            weighting = [equities, cash, etf, structured]
-#            for i, value in enumerate(weighting):
-#                weighting[i] = value.strip(' \t\r\n').strip('"')
-#        except Exception as e:
-#            print("ERROR AT WEIGHTING")
-#            print(e)
-#        else:
-#            return weighting
-
-#    def add_cookie_from_config(self, config):
-#        parser = ConfigParser()
-#        parser.read(config)
-#        cookie = dict()
-#        for key in parser['cookies']:
-#            cookie[key] = parser['cookies'][key]
-#        self.driver.add_cookie(cookie)
