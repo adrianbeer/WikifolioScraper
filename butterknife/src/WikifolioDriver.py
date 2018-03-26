@@ -132,12 +132,12 @@ class WikifolioDriver(Driver):
     def _get_isin(self):
         # Get ISIN
         e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
-        return super().get_website_elements(By.XPATH, e_stock, 'text')
+        return super().get_website_elements(By.XPATH, e_isin, 'text')
         
     def _get_capital(self):
         # Get capital
         e_capital = "//dic[@class='c-certificate__item-value']"
-        capital = super().get_website_elements(By.XPATH, e_stock, 'text')
+        capital = super().get_website_elements(By.XPATH, e_capital, 'text')
         # u20AC is the euro sign
         return capital.replace('.','').strip(' ', u"\u20AC")
 
