@@ -35,6 +35,14 @@ class Driver:
         self._current_website = value
         self.driver.get(value)
     
+    def get_links(self, source, class_name, amount):
+        self.current_website = source
+        links = []
+        while (len(links) < amount):
+            self.scroll_down() #Scroll down to get access to more links
+            links.extend(self.get_website_elements(By.CLASS_NAME, class_name, 'href'))
+        return links[0:amount]
+    
     def get_website_elements(self, by, identifier, desired_attribute=None):
         elements = self._find_elements(by, identifier)
         if desired_attribute is None:
@@ -43,14 +51,6 @@ class Driver:
             return [e.text for e in elements]
         else:
             return [e.get_attribute(desired_attribute) for e in elements]
-    
-    def get_links(self, source, class_name, amount):
-        self.current_website = source
-        links = []
-        while (len(links) < amount):
-            self.scroll_down() #Scroll down to get access to more links
-            links.extend(self.get_website_elements(By.CLASS_NAME, class_name, 'href'))
-        return links[0:amount]
     
     def scroll_down(self):
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")

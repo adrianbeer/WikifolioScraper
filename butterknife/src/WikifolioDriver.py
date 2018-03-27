@@ -46,25 +46,14 @@ class WikifolioDriver(Driver):
             self.quarries.append(quarry)
 
     def make_blocks_from_quarries(self):
-        #Scraping links: currently only available by class (html element)!
+        #Get links, which are to be harvested by `scrape_content` later on.
+        #Currently links can only be harvested by the class_name attribute.
         for quarry in self.quarries:
             self.blocks[quarry.title] = super().get_links(
                     source=quarry.link,
                     class_name=quarry.class_name,
                     amount=quarry.amount
                 ) 
-
-    def scrape_content(self, link):
-        """---------------------
-        :returns: List of values
-
-        .. warning:: Order of returned values to be harmonized w/ `.csv` files. 
-        ------------------------"""
-        self.current_website = link
-        invested, cash = self._get_commitment_ratio()
-        isin = self._get_isin()
-        capital = self._get_capital
-        return [isin, capital, invested, cash]
 
     def login(self):
         """
@@ -105,13 +94,55 @@ class WikifolioDriver(Driver):
         cookies = self.driver.get_cookies()
         return cookies
 
+    def scrape_content(self, link):
+        """---------------------
+        :returns: List of values
+
+        .. warning:: Order of returned values to be harmonized w/ `.csv` files. 
+        ------------------------"""
+        self.current_website = link
+        price = self._get_shares()
+        isin = self._get_isin()
+        capital = self._get_capital
+        invested, cash = self._get_commitment_ratio()
+        return [isin, capital, price, invested, cash]
+
     def find_and_click(self, by, identifier):
         element = self.wait.until(EC.element_to_be_clickable((by, identifier)))
         self._click(element)
         return element
 
+    def _get_isin(self):
+        e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
+        return super().get_website_elements(By.XPATH, e_isin, 'text')[0]
+        
+    def _get_capital(self):
+        e_capital = "//div[@class='c-certificate__item-value']"
+        capital = super().get_website_elements(By.XPATH, e_capital, 'text')[0]
+        # u20AC is the euro sign
+        return capital.replace('.','').strip(' ', u"\u20AC")
+
+    def _get_price(self):
+        sell = r'c-certificate__price-value js-certificate__sell'
+        buy = r'c-certificate__price-value js-certificate__buy'
+        sell = super().get_website_elements(By.CLASS_NAME, sell, 'text')[0]
+        buy super().get_website_elements(By.CLASS_NAME, buy, 'text')[0]
+        sell = float(sell.replace(',','.'))
+        buy = float(buy.replace(',', '.'))
+        return ((sell+buy) / 2)
+
+    def _get_commitment_ratio(self):
+        # Returns invested-to-cash ratio as a list [stock, cash]
+        # Note: Xpath lists start at 1.
+        e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[2]"
+        self.find_and_click(By.XPATH, e_portfolio)
+        e_stock = "//span[@class='c-portfolio__head-label']"
+        shares = super().get_website_elements(By.XPATH, e_stock, 'text')
+        return parse_shares(shares)
+
     def _click(self, element):
-        # Tries to perform a more realistic click, than standard implementation
+        # Tries to appear more human, by first moving to the element with
+        # the cursor.
         try:
             ActionChains(self.driver).move_to_element(element).perform()
         except Exception as e:
@@ -119,25 +150,10 @@ class WikifolioDriver(Driver):
         element.click()
         sleep(uniform(1, 2))
 
-    def _get_commitment_ratio(self):
-        # Get invested-to-cash ratio
-        # Note: Xpath lists start at 1.
-        e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[2]"
-        self.find_and_click(By.XPATH, e_portfolio)
-        e_stock = "//span[@class='c-portfolio__head-label']"
-        shares = super().get_website_elements(By.XPATH, e_stock, 'text')
-        assert len(shares) == 2
-        return [round(float(x.strip(' %').replace(',','.'))/100, 2) for x in shares]
-
-    def _get_isin(self):
-        # Get ISIN
-        e_isin = "//div[@class='c-certificate__item-value js-copy-isin']"
-        return super().get_website_elements(By.XPATH, e_isin, 'text')
-        
-    def _get_capital(self):
-        # Get capital
-        e_capital = "//dic[@class='c-certificate__item-value']"
-        capital = super().get_website_elements(By.XPATH, e_capital, 'text')
-        # u20AC is the euro sign
-        return capital.replace('.','').strip(' ', u"\u20AC")
+    def parse_shares(shares):
+        if len(shares) == 2:
+            return [round(float(x.strip(' %').replace(',','.'))/100, 2) for x in shares]
+        elif len(shares) == 3:
+            shares = [shares[0], shares[2]]
+            return parse_shares(shares)
 
