@@ -104,8 +104,8 @@ class WikifolioDriver(Driver):
         price = self._get_shares()
         isin = self._get_isin()
         capital = self._get_capital
-        invested, cash = self._get_commitment_ratio()
-        return [isin, capital, price, invested, cash]
+        cash = self._get_cash_ratio()
+        return [isin, capital, price, cash]
 
     def find_and_click(self, by, identifier):
         element = self.wait.until(EC.element_to_be_clickable((by, identifier)))
@@ -125,20 +125,21 @@ class WikifolioDriver(Driver):
     def _get_price(self):
         sell = r'c-certificate__price-value js-certificate__sell'
         buy = r'c-certificate__price-value js-certificate__buy'
+
         sell = super().get_website_elements(By.CLASS_NAME, sell, 'text')[0]
         buy super().get_website_elements(By.CLASS_NAME, buy, 'text')[0]
+
         sell = float(sell.replace(',','.'))
         buy = float(buy.replace(',', '.'))
         return ((sell+buy) / 2)
 
-    def _get_commitment_ratio(self):
-        # Returns invested-to-cash ratio as a list [stock, cash]
-        # Note: Xpath lists start at 1.
+    def _get_cash_ratio(self):
         e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[2]"
-        self.find_and_click(By.XPATH, e_portfolio)
         e_stock = "//span[@class='c-portfolio__head-label']"
+
+        self.find_and_click(By.XPATH, e_portfolio)
         shares = super().get_website_elements(By.XPATH, e_stock, 'text')
-        return parse_shares(shares)
+        return _extract_cash(shares)
 
     def _click(self, element):
         # Tries to appear more human, by first moving to the element with
@@ -150,10 +151,6 @@ class WikifolioDriver(Driver):
         element.click()
         sleep(uniform(1, 2))
 
-    def parse_shares(shares):
-        if len(shares) == 2:
-            return [round(float(x.strip(' %').replace(',','.'))/100, 2) for x in shares]
-        elif len(shares) == 3:
-            shares = [shares[0], shares[2]]
-            return parse_shares(shares)
+    def _extract_cash(shares):
+        return round(float(shares[-1].strip(' %').replace(',','.'))/100, 2)
 

@@ -37,8 +37,12 @@ class Driver:
     
     def get_links(self, source, class_name, amount):
         self.current_website = source
+        previous_amount = -1
         links = []
-        while (len(links) < amount):
+        #End loop when desired amount has been reached or no further progress
+        #can be made.
+        while (len(links) < amount and len(links) > previous_amount):
+            previous_amount = len(links)
             self.scroll_down() #Scroll down to get access to more links
             links.extend(self.get_website_elements(By.CLASS_NAME, class_name, 'href'))
         return links[0:amount]
