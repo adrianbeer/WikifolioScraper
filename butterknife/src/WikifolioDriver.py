@@ -101,7 +101,7 @@ class WikifolioDriver(Driver):
         .. warning:: Order of returned values to be harmonized w/ `.csv` files. 
         ------------------------"""
         self.current_website = link
-        price = self._get_shares()
+        price = self._get_price()
         isin = self._get_isin()
         capital = self._get_capital
         cash = self._get_cash_ratio()
@@ -125,13 +125,18 @@ class WikifolioDriver(Driver):
     def _get_price(self):
         sell = r'c-certificate__price-value js-certificate__sell'
         buy = r'c-certificate__price-value js-certificate__buy'
+        mid = r'c-certificate__price-value js-certificate__mid'
 
-        sell = super().get_website_elements(By.CLASS_NAME, sell, 'text')[0]
-        buy super().get_website_elements(By.CLASS_NAME, buy, 'text')[0]
-
-        sell = float(sell.replace(',','.'))
-        buy = float(buy.replace(',', '.'))
-        return ((sell+buy) / 2)
+        try:
+            sell = super().get_website_elements(By.CLASS_NAME, sell, 'text')[0]
+            buy = super().get_website_elements(By.CLASS_NAME, buy, 'text')[0]
+            sell = float(sell.replace(',','.'))
+            buy = float(buy.replace(',', '.'))
+            price = ((sell+buy) / 2) 
+        except NoSuchElementException:
+            mid = super().get_website_elements(By.CLASS_NAME, mid, 'text')[0]
+            price = float(mid.replace(',','.'))
+        return price
 
     def _get_cash_ratio(self):
         e_portfolio = "//ul[@class='c-wfdetail__tabs-list']/li[2]"
