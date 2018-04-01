@@ -134,7 +134,7 @@ class WikifolioDriver(Driver):
             sell = float(sell.replace(',','.'))
             buy = float(buy.replace(',', '.'))
             price = ((sell+buy) / 2) 
-        except NoSuchElementException:
+        except (IndexError, NoSuchElementException):
             mid = super().get_website_elements(By.CLASS_NAME, mid, 'text')[0]
             price = float(mid.replace(',','.'))
         return price
