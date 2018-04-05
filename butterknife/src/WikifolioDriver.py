@@ -124,18 +124,21 @@ class WikifolioDriver(Driver):
         return capital.replace('.','').strip(' ', u"\u20AC")
 
     def _get_price(self):
-        sell = r'c-certificate__price-value js-certificate__sell'
-        buy = r'c-certificate__price-value js-certificate__buy'
-        mid = r'c-certificate__price-value js-certificate__mid'
+        sell = "//div[@class='c-certificate__price-value js-certificate__sell']"
+        buy = "//div[@class='c-certificate__price-value js-certificate__buy']"
+        mid = "//div[@class='c-certificate__price-value js-certificate__mid']"
 
         try:
-            sell = super().get_website_elements(By.CLASS_NAME, sell, 'text')[0]
-            buy = super().get_website_elements(By.CLASS_NAME, buy, 'text')[0]
+            sell = super().get_website_elements(By.XPATH, sell, 'text')[0]
+            buy = super().get_website_elements(By.XPATH, buy, 'text')[0]
             sell = float(sell.replace(',','.'))
             buy = float(buy.replace(',', '.'))
-            price = ((sell+buy) / 2) 
+            if sell.contains('-') or buy.contains('-'):
+                raise NoSuchElementException
+            else:
+                price = ((sell+buy) / 2) 
         except (IndexError, NoSuchElementException):
-            mid = super().get_website_elements(By.CLASS_NAME, mid, 'text')[0]
+            mid = super().get_website_elements(By.XPATH, mid, 'text')[0]
             price = float(mid.replace(',','.'))
         return price
 
@@ -145,7 +148,7 @@ class WikifolioDriver(Driver):
 
         self.find_and_click(By.XPATH, e_portfolio)
         shares = super().get_website_elements(By.XPATH, e_stock, 'text')
-        return _extract_cash(shares)
+        return WikifolioDriver._extract_cash(shares)
 
     def _click(self, element):
         # Tries to appear more human, by first moving to the element with
@@ -157,6 +160,7 @@ class WikifolioDriver(Driver):
         element.click()
         sleep(uniform(1, 2))
 
+    @staticmethod
     def _extract_cash(shares):
         return round(float(shares[-1].strip(' %').replace(',','.'))/100, 2)
 
