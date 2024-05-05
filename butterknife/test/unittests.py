@@ -10,8 +10,8 @@ class TestInitialization(unittest.TestCase):
         cls.driver.login()
 
     def test_sysconfig_parser(self):
-        self.assertEqual(self.driver.username, r'***REMOVED***')
-        self.assertEqual(self.driver.password, r'***REMOVED***')
+        self.assertEqual(self.driver.username, r'greenberetfb@gmail.com')
+        self.assertEqual(self.driver.password, r'youscaredmotherfucker?')
 
     def test_block_generation(self):
         self.driver.parse_quarries(r'C:\Users\Adrian\Documents\GitHub\butterknife\butterknife\test\quarries.ini')
